@@ -6,7 +6,6 @@
 //Lectura de 8 tubos Geiger (4 + 4)
 //Bluetooth conectado en pines 19-18-17-16
 
-
 #include <SoftwareSerial.h> //Para usar on MIDI
 
 const int tubo10 = 46;
@@ -186,10 +185,6 @@ void setup() {
   MIDIsetup(); //Inicialización MIDI
 }
 
-void loop() { 
-
-  unsigned int tiempoON[16];
-  
   boolean nuevaPisada = false;
   boolean nuevoRayo = false;
   
@@ -210,14 +205,14 @@ void loop() {
 
   byte bytealto;  //Puse byte en vez de char
   byte bytebajo;  //Puse byte en lugar de char
- 
-  
-  
+  unsigned int tiempoON[16];
+  int cuenta;
+
+void loop() { 
   entradas1=0;  //Almaceno lectura de 4 tubos fila1
   entradas2=0;  //Almaceno lectura de 4 tubos fila2
   
   salidaanterior = salida;
- 
   salida = 0; 
   
   //Lectura del estado de los tubos
@@ -240,6 +235,7 @@ void loop() {
   bitWrite(entradas2, 3, sttubo23);
   bitWrite(entradas2, 4, 1);  //...así empieza por 1 y visualizo los 0
 
+ 
  
  
   //Miramos coincidencias de deteccion de rayo entre todos los tubos 
@@ -275,18 +271,127 @@ void loop() {
   */
 
 
- 
- 
+  cuenta ++;
+  if (cuenta > 10000)
+  {
+    cuenta = 0;
+    
+    Serial.print (millis()); Serial.print ("   "); Serial.print (entradas1,BIN); 
+    Serial.print ("  ----  ----  "); Serial.print (entradas2,BIN); 
+    Serial.print ("  salida: "); Serial.print (salida); Serial.println ("   "); 
+
+    lee_dato ();
+
+
+  }
+    
+  
   
   if(salida!=salidaanterior) {
     
+
+
     bytealto = highByte(salida);
     bytebajo = lowByte(salida);
     
     //Envio palabra, dos caracteres,  al otro arduino a través de BT
    
-    if (salida != 0)
+   if (salida)
+   {
+     nuevoRayo = true;
+     envia_datos ();
+     TileOn(salida);  //Nota musical
+   }
+    // delay(100);  //Tenia 350 antes del midi
+     
+    /*
+    Serial.print("Entradas1: ");
+    Serial.println(entradas1, BIN);
+    Serial.print("Entradas2: ");
+    Serial.println(entradas2, BIN);
+    Serial.println("");
+    */
+     
+    delay(1);
+  }  
+
+   
+
+
+    
+  //Sólo tengo encendidos los leds un tiempo, luego lo apago
+  //Cambiar el valor de tiempo de encendido aquí
+  tiempo2=millis();
+  for(int i = 0; i < 16; i++)
+  {
+    tiempoON[i] = tiempo2-tiempo[i];
+    if(tiempoON[i] > 1500)  digitalWrite(i+22, LOW);
+  }
+  
+
+  if (nuevaPisada) 
+  {
+      /*
+      Serial.print ("dato 0 ="); Serial.println (dato[0]);
+      Serial.print ("dato 1 ="); Serial.println (dato[1]);
+      Serial.print ("dato 2 ="); Serial.println (dato[3]);
+      Serial.print ("dato 3 ="); Serial.println (dato[4]);
+      */
+    for (int i=0; i<8; i++)
     {
+      bitWrite(aux0, i, bitRead (dato[0], 7-i));
+      bitWrite(aux1, i, bitRead (dato[1], 7-i));            
+    }
+  }
+      
+      
+  if ((salida != 0) || !dato[0] || !dato[1])
+  {
+      // imprime_datos (bytealto, bytebajo, dato[0], dato[1]);
+    // imprime_datos (bytealto, bytebajo, aux0, aux1);
+  }
+  
+  if (nuevoRayo)  imprime_datos (bytealto, bytebajo, aux0, aux1);
+  nuevoRayo = false;
+  nuevaPisada = false;
+
+ 
+}
+
+
+void imprime_datos (byte dato_0 ,byte dato_1 , byte switchVar1, byte switchVar2)
+{
+  boolean prueba;
+
+  // Impresión de datos alternativa
+  Serial.print ("rayos   ");
+    for (int i=0; i<4; i++) {prueba = 1 & (dato_0>>i); Serial.print (prueba,BIN);}
+    Serial.print (" ");
+    for (int i=4; i<8; i++) {prueba = 1 & (dato_0>>i); Serial.print (prueba,BIN);}
+     
+  Serial.print (" - ");
+    for (int i=0; i<4; i++) {prueba = 1 & (dato_1>>i); Serial.print (prueba,BIN);}
+    Serial.print (" ");
+    for (int i=4; i<8; i++) {prueba = 1 & (dato_1>>i); Serial.print (prueba,BIN);}
+     
+  Serial.print (" --- ");
+  Serial.print ("pisadas ");
+    for (int i=0; i<4; i++) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
+    Serial.print (" ");
+    for (int i=4; i<8; i++) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
+
+  Serial.print (" - ");
+    for (int i=0; i<4; i++) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
+    Serial.print (" ");
+    for (int i=4; i<8; i++) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
+
+   Serial.println ();     
+}
+
+
+
+void envia_datos ()
+{
       tiempo1 = millis();
       nuevoRayo = true;
 
@@ -327,24 +432,10 @@ void loop() {
      */
 
     }
-
-    if (salida) TileOn(salida);  //Nota musical
-    
-    // delay(100);  //Tenia 350 antes del midi
-     
-    /*
-    Serial.print("Entradas1: ");
-    Serial.println(entradas1, BIN);
-    Serial.print("Entradas2: ");
-    Serial.println(entradas2, BIN);
-    Serial.println("");
-    */
-     
-    delay(1);
-  }  
-
-   
-   
+  
+  
+  void lee_dato ()
+ { 
    
   //if (Serial2.available())
   //{
@@ -403,70 +494,6 @@ void loop() {
       }
           
     */
-   
-    
-  //Sólo tengo encendidos los leds un tiempo, luego lo apago
-  //Cambiar el valor de tiempo de encendido aquí
-  tiempo2=millis();
-  for(int i = 0; i < 16; i++)
-  {
-    tiempoON[i] = tiempo2-tiempo[i];
-    if(tiempoON[i] > 1500)  digitalWrite(i+22, LOW);
-  }
-  
-
-  if (nuevaPisada) 
-  {
-      /*
-      Serial.print ("dato 0 ="); Serial.println (dato[0]);
-      Serial.print ("dato 1 ="); Serial.println (dato[1]);
-      Serial.print ("dato 2 ="); Serial.println (dato[3]);
-      Serial.print ("dato 3 ="); Serial.println (dato[4]);
-      */
-    for (int i=0; i<8; i++)
-    {
-      bitWrite(aux0, i, bitRead (dato[0], 7-i));
-      bitWrite(aux1, i, bitRead (dato[1], 7-i));            
-    }
-  }
-      
-      
-  if ((salida != 0) || !dato[0] || !dato[1])
-  {
-      // imprime_datos (bytealto, bytebajo, dato[0], dato[1]);
-    imprime_datos (bytealto, bytebajo, aux0, aux1);
-  }
-}
-
-
-void imprime_datos (byte dato_0 ,byte dato_1 , byte switchVar1, byte switchVar2)
-{
-  boolean prueba;
-
-  // Impresión de datos alternativa
-  Serial.print ("rayos   ");
-    for (int i=0; i<4; i++) {prueba = 1 & (dato_0>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (dato_0>>i); Serial.print (prueba,BIN);}
-     
-  Serial.print (" - ");
-    for (int i=0; i<4; i++) {prueba = 1 & (dato_1>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (dato_1>>i); Serial.print (prueba,BIN);}
-     
-  Serial.print (" --- ");
-  Serial.print ("pisadas ");
-    for (int i=0; i<4; i++) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
-
-  Serial.print (" - ");
-    for (int i=0; i<4; i++) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
-
-   Serial.println ();     
-}
-
+ }
 
 
