@@ -75,9 +75,10 @@ Adafruit_NeoPixel pixels_1 = Adafruit_NeoPixel(NUMPIXELS, PIN_1, NEO_GRB + NEO_K
 
 Adafruit_NeoPixel pixels_2 = Adafruit_NeoPixel(NUMPIXELS, PIN_2, NEO_GRB + NEO_KHZ800);
 
+Adafruit_NeoPixel pixels_4 = Adafruit_NeoPixel(NUMPIXELS, PIN_4, NEO_GRB + NEO_KHZ800);
+
 Adafruit_NeoPixel pixels_3 = Adafruit_NeoPixel(NUMPIXELS, PIN_3, NEO_GRB + NEO_KHZ800);
 
-Adafruit_NeoPixel pixels_4 = Adafruit_NeoPixel(NUMPIXELS, PIN_4, NEO_GRB + NEO_KHZ800);
 
 
 void setup() {
@@ -165,7 +166,10 @@ void loop() {
    if(BTSlave.available())
    {
      memset(dato, 0, sizeof(dato)); //Borro los datos anteriores. Ojo. ahora borra 4 bytes
-     longitud = BTSlave.readBytes(dato, 2); //Leo los 2 bytes dato[0]  y dato[1] y me da el nº(longitud leida) de bytes
+     longitud = BTSlave.readBytes(dato, 4); //Leo los 2 bytes dato[0]  y dato[1] y me da el nº(longitud leida) de bytes
+     
+     dato[0] = dato[0] & dato[2];
+     dato[1] = dato[1] & dato[3];
      
     nuevoRayo = true;
             dato1 = dato[1] & 0x0F; //4 bits menos significativos 
@@ -398,4 +402,23 @@ void imprime_datos (byte dato_0 ,byte dato_1 , byte switchVar1, byte switchVar2)
 }
 
 
- 
+
+
+
+
+
+
+
+
+
+
+
+int freeRam () 
+{
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
+// https://learn.adafruit.com/memories-of-an-arduino/optimizing-sram#f-those-strings
+
