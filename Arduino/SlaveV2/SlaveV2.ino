@@ -52,6 +52,9 @@ byte Mswitch2 = 15;
 byte Acierto1 = 0;
 byte Acierto2 = 0;  //Bytes para enviar al techo y sonar MIDI
 
+unsigned int patron_pisadas, patron_pisadas_ant;
+unsigned int patron_rayos, patron_rayos_ant;
+
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
@@ -75,14 +78,15 @@ Adafruit_NeoPixel pixels_1 = Adafruit_NeoPixel(NUMPIXELS, PIN_1, NEO_GRB + NEO_K
 
 Adafruit_NeoPixel pixels_2 = Adafruit_NeoPixel(NUMPIXELS, PIN_2, NEO_GRB + NEO_KHZ800);
 
-Adafruit_NeoPixel pixels_4 = Adafruit_NeoPixel(NUMPIXELS, PIN_4, NEO_GRB + NEO_KHZ800);
-
 Adafruit_NeoPixel pixels_3 = Adafruit_NeoPixel(NUMPIXELS, PIN_3, NEO_GRB + NEO_KHZ800);
+
+Adafruit_NeoPixel pixels_4 = Adafruit_NeoPixel(NUMPIXELS, PIN_4, NEO_GRB + NEO_KHZ800);
 
 
 
 void setup() {
-  
+    delay (5000);
+    
     //define pin modes del parallel-serial
     pinMode(latchPin, OUTPUT);
     pinMode(clockPin, OUTPUT); 
@@ -101,26 +105,109 @@ void setup() {
    tpoanterior=millis();
 }
 
+  unsigned long num_muestreos = 10;  // Numero de muetreos de los tubos antes de revisar el puerto serie
+  unsigned long muestreos = 0;
+
+
 void loop() {
-   int k;
-   boolean nuevaPisada = false;
-   boolean nuevoRayo = false;
+  int k;
+  boolean nuevaPisada = false;
+  boolean nuevoRayo = false;
 
-   //Lectura de los sensores de presion
-   //si presiono obtengo un 0
-   //Pulse the latch pin:
-   //set it to 1 to collect parallel data
-   digitalWrite(latchPin,1);
-   //set it to 1 to collect parallel data, wait
-   delayMicroseconds(20);
-   //set it to 0 to transmit data serially  
-   digitalWrite(latchPin,0);
+  //Lectura de los sensores de presion
+  //si presiono obtengo un 0
+  {
+    //Pulse the latch pin:
+    //set it to 1 to collect parallel data
+    digitalWrite(latchPin,1);
+    //set it to 1 to collect parallel data, wait
+    delayMicroseconds(20);
+    //set it to 0 to transmit data serially  
+    digitalWrite(latchPin,0);
 
-   //while the shift register is in serial mode
-   //collect each shift register into a byte
-   //the register attached to the chip comes in first 
-   switchVar1 = shiftIn(dataPin, clockPin);
-   switchVar2 = shiftIn(dataPin, clockPin);
+    //while the shift register is in serial mode
+    //collect each shift register into a byte
+    //the register attached to the chip comes in first 
+    switchVar1 = shiftIn(dataPin, clockPin);
+    switchVar2 = shiftIn(dataPin, clockPin);
+  }
+  
+  // Reune las 16 pisadas con logica pisado = 1
+  patron_pisadas = (switchVar1) + 256 * (switchVar2);
+  patron_pisadas = ~ patron_pisadas;
+  //patron_pisadas = patron_pisadas | ~switchVar2;
+  /* Serial.print (" Esto es patron de pisadas: "); Serial.print (patron_pisadas,BIN); Serial.print (" -- "); 
+    
+    
+   imprime_datos (switchVar1 ,switchVar2, lowByte(patron_pisadas), highByte(patron_pisadas));
+
+    
+    //Serial.print (" -- "); Serial.print (switchVar1,BIN);
+    //Serial.print (" -- "); Serial.println (switchVar2,BIN);
+    delay (10);
+    */
+
+  // Atiende al canal serie.
+  // Espera una secuencia de 8 bytes, que contienen la repetición 
+     // 4 veces de los dos bytes que representan el patrón de rayos
+     // Busca coincidencias entre los envíos 1y2; y entre 3y4
+     // Toma como validas cualesquiera de esas coincidencias.
+  //int bytes_libres;
+  
+  patron_rayos = lee_dato ();
+  
+  //if ((patron_rayos) & (patron_rayos != patron_rayos_ant)) 
+  if (patron_rayos)
+  {
+    nuevoRayo = true;
+    patron_rayos_ant = patron_rayos;
+    
+      
+    // Para mantener la compatibilidad con lo que hay
+    dato[0] = highByte (patron_rayos);
+    dato[1] = lowByte  (patron_rayos);
+    // dato[0] = dato[0] & dato[2];
+    // dato[1] = dato[1] & dato[3];
+     
+    dato1 = dato[1] & 0x0F; //4 bits menos significativos 
+    dato2 = dato[1] & 0xF0; //4 bits más significativos 
+        
+    dato3 = dato[0] & 0x0F;
+    dato4 = dato[0] & 0xF0;
+        
+        
+    aleatorio = ++aleatorio;
+    
+    if(aleatorio > 6) aleatorio = 1;
+        //Puse número secuencial, ya no es aleatorio
+    
+    longitud=0;
+    
+    bitlongitud = HIGH;
+        //Si es uno ponemos luz al maximo(120 no 255) y el color secuencial que toque
+    
+    for(int k=0; k<4; k++) 
+    {
+      if(bitRead(dato1, k))   { Qluz1[k] = 120; color1[k] = aleatorio; }
+      if(bitRead(dato2, k+4)) { Qluz2[k] = 120; color2[k] = aleatorio; }
+      if(bitRead(dato3, k))   { Qluz3[k] = 120; color3[k] = aleatorio; }
+      if(bitRead(dato4, k+4)) { Qluz4[k] = 120; color4[k] = aleatorio; }
+    }
+    
+  }
+     
+  muestreos ++;
+  //if (patron_pisadas != patron_pisadas_ant)
+  if (muestreos >= num_muestreos)
+  {
+    patron_pisadas_ant = patron_pisadas;
+    // envía el patron de pisadas
+    
+    envia_datos (patron_pisadas);
+    
+    Serial.print (" envie patron de pisadas: "); Serial.println (patron_pisadas,BIN);
+  }
+
 
    
    //reading  y si son distintos los visualizo en el canal serie
@@ -145,10 +232,10 @@ void loop() {
      //Obtengo los datos de las 4 filas de mi pista    
      Mswitch2 = switchVar1 & 0x0F;
      Lswitch2 = switchVar1 & 0xF0;
-     Lswitch2 = Lswitch1 >> 4;
+     Lswitch2 = Lswitch2 >> 4;                                /////////// AQUIIIIIIIIII
      Mswitch1 = switchVar2 & 0x0F;
      Lswitch1 = switchVar2 & 0xF0; 
-     Lswitch1 = Lswitch1 >> 4;
+     Lswitch1 = Lswitch1 >> 4; 
      
      /*
      Serial.println(Lswitch1, BIN);
@@ -162,46 +249,6 @@ void loop() {
    }
    
 
-   int bytes_libres;
-   if(BTSlave.available())
-   {
-     memset(dato, 0, sizeof(dato)); //Borro los datos anteriores. Ojo. ahora borra 4 bytes
-     longitud = BTSlave.readBytes(dato, 4); //Leo los 2 bytes dato[0]  y dato[1] y me da el nº(longitud leida) de bytes
-     
-     dato[0] = dato[0] & dato[2];
-     dato[1] = dato[1] & dato[3];
-     
-    nuevoRayo = true;
-            dato1 = dato[1] & 0x0F; //4 bits menos significativos 
-        dato2 = dato[1] & 0xF0; //4 bits más significativos 
-        
-        dato3 = dato[0] & 0x0F;
-        dato4 = dato[0] & 0xF0;
-        
-        
-        aleatorio = ++aleatorio;
-        if(aleatorio > 6) aleatorio = 1;
-        //Puse número secuencial, ya no es aleatorio
-        longitud=0;
-        bitlongitud = HIGH;
-        //Si es uno ponemos luz al maximo(120 no 255) y el color secuencial que toque
-        for(int k=0; k<4; k++) {
-           if(bitRead(dato1, k)) { Qluz1[k] = 120; color1[k] = aleatorio; }
-           if(bitRead(dato2, k+4)) { Qluz2[k] = 120; color2[k] = aleatorio; }
-           if(bitRead(dato3, k)) { Qluz3[k] = 120; color3[k] = aleatorio; }
-           if(bitRead(dato4, k+4)) { Qluz4[k] = 120; color4[k] = aleatorio; }
-         }
-
-    
-    
-     
-     while (BTSlave.available())
-     {
-       BTSlave.read()  ;
-       Serial.print (".");
-     }
-   }
-     
    
    
    /*
@@ -304,30 +351,36 @@ void loop() {
         else {  //Si piso baldosa apago luz y mando acierto (un 1) al techo
           if (Qluz1[i]==0)  bitWrite(Acierto1, i, 0);  //Pisé una apagada 
           else              bitWrite(Acierto1, i, 1);  //Pisé una encendida: acierto
-          Qluz1[i]=0; //se ha pulsado entonces lo apago
+          Qluz1[i]=0;                                  //se ha pulsado entonces lo apago
         }
+
+
         if(bitRead(Mswitch1, k)) {
            if(Qluz2[i] >= 5){ Qluz2[i] = Qluz2[i]-5; }
         }
         else {
           if (Qluz2[i]==0) bitWrite(Acierto1, i+4, 0);  //Pisé una apagada  
-          else bitWrite(Acierto1, i+4, 1);  //Pisé una encendida: acierto
+          else             bitWrite(Acierto1, i+4, 1);  //Pisé una encendida: acierto
           Qluz2[i] = 0;
         }
+
+
         if(bitRead(Lswitch2, k)) {
            if(Qluz3[i] >= 5) Qluz3[i] = Qluz3[i]-5;
         }
         else {
           if (Qluz3[i]==0) bitWrite(Acierto2, i, 0);  //Pisé una apagada  
-          else bitWrite(Acierto2, i, 1);  //Pisé una encendida: acierto
+          else             bitWrite(Acierto2, i, 1);  //Pisé una encendida: acierto
           Qluz3[i]=0; //se ha pulsado entonces lo apago
         }
+
+
         if(bitRead(Mswitch2, k)) {
-           if(Qluz4[i] >= 5){ Qluz4[i] = Qluz4[i]-5; }
+           if(Qluz4[i] >= 5){Qluz4[i] = Qluz4[i]-5; }
         }
         else{
           if (Qluz4[i]==0) bitWrite(Acierto2, i+4, 0);  //Pisé una apagada  
-          else bitWrite(Acierto2, i+4, 1);  //Pisé una encendida: acierto  
+          else             bitWrite(Acierto2, i+4, 1);  //Pisé una encendida: acierto  
           Qluz4[i] = 0;
         }
        
@@ -363,62 +416,20 @@ void loop() {
     Acierto1 = 0;
     Acierto2 = 0;
    
+    
+
+   
    if (nuevaPisada || nuevoRayo) 
    {
-     Serial.print (bytes_libres); 
-     Serial.print (" - "); imprime_datos (dato[0] ,dato[1] , switchVar1, switchVar2);
+     Serial.print ("   free RAM = "); Serial.print (freeRam()); Serial.print (" - "); 
+     
+     for (int i=0; i<4; i++) {Serial.print (Qluz1[i]); Serial.print (" ");}
+     for (int i=0; i<4; i++) {Serial.print (Qluz2[i]); Serial.print (" ");}
+     for (int i=0; i<4; i++) {Serial.print (Qluz3[i]); Serial.print (" ");}
+     for (int i=0; i<4; i++) {Serial.print (Qluz4[i]); Serial.print (" ");} Serial.print ("   -   ");
+     imprime_datos (dato[0] ,dato[1] , switchVar1, switchVar2);
    }
    
 }
 
-
-void imprime_datos (byte dato_0 ,byte dato_1 , byte switchVar1, byte switchVar2)
-{
-  boolean prueba;
-
-  // Impresión de datos alternativa
-  Serial.print ("rayos   ");
-    for (int i=0; i<4; i++) {prueba = 1 & (dato_0>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (dato_0>>i); Serial.print (prueba,BIN);}
-     
-  Serial.print (" - ");
-    for (int i=0; i<4; i++) {prueba = 1 & (dato_1>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (dato_1>>i); Serial.print (prueba,BIN);}
-     
-  Serial.print (" --- ");
-  Serial.print ("pisadas ");
-    for (int i=0; i<4; i++) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
-
-  Serial.print (" - ");
-    for (int i=0; i<4; i++) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
-    Serial.print (" ");
-    for (int i=4; i<8; i++) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
-
-   Serial.println ();     
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-int freeRam () 
-{
-  extern int __heap_start, *__brkval; 
-  int v; 
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
-}
-
-// https://learn.adafruit.com/memories-of-an-arduino/optimizing-sram#f-those-strings
 

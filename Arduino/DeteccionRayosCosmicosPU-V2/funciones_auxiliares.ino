@@ -1,4 +1,4 @@
-void imprime_datos (byte dato_0 ,byte dato_1 , byte switchVar1, byte switchVar2)
+void imprime_datos (byte dato_0 ,byte dato_1 , byte Var1, byte Var2)
 {
   boolean prueba;
 
@@ -15,19 +15,26 @@ void imprime_datos (byte dato_0 ,byte dato_1 , byte switchVar1, byte switchVar2)
      
   Serial.print (" --- ");
   Serial.print ("pisadas ");
-    for (int i=7; i>=4; i--) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
+    for (int i=7; i>=4; i--) {prueba = 1 & (Var1>>i); Serial.print (prueba,BIN);}
     Serial.print (" ");
-    for (int i=3; i>=0; i--) {prueba = 1 & (switchVar1>>i); Serial.print (prueba,BIN);}
+    for (int i=3; i>=0; i--) {prueba = 1 & (Var1>>i); Serial.print (prueba,BIN);}
 
   Serial.print (" - ");
-    for (int i=7; i>=4; i--) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
+    for (int i=7; i>=4; i--) {prueba = 1 & (Var2>>i); Serial.print (prueba,BIN);}
     Serial.print (" ");
-    for (int i=3; i>=0; i--) {prueba = 1 & (switchVar2>>i); Serial.print (prueba,BIN);}
+    for (int i=3; i>=0; i--) {prueba = 1 & (Var2>>i); Serial.print (prueba,BIN);}
 
    Serial.println ();     
 }
 
-int muestreo_tubos ()
+
+/***********************************************************************/
+/***      unsigned int muestreo_tubos ()                          *******
+ Muestrea el estado de la matriz de tubos Geiger, y calcula las 
+     coincidencias
+ El resultado es una palabra de 16 bit con 1 en las coincidencias
+************************************************************************/
+unsigned int muestreo_tubos ()
 {
   unsigned int salida = 0;
   // byte entradas1 = 0;  //Almaceno lectura de 4 tubos fila1
@@ -85,28 +92,24 @@ int muestreo_tubos ()
   return salida;
 }
 
-void envia_datos (unsigned int patron_rayos)
+
+/***********************************************************************/
+/***      void envia_datos (unsigned int patron_envio)           *******
+ Envía datos a través del puerto Serial2 del arduino MEGA
+ Se envían dos veces una secuencia del byte alto y el byte bajo 
+     de la palabra de 16 bits.
+************************************************************************/
+void envia_datos (unsigned int patron_envio)
 {
-      tiempo1 = millis();
-      nuevoRayo = true;
-
-      Serial2.write(highByte(patron_rayos));
-      delay(1);
-      Serial2.write(lowByte(patron_rayos));
-      delay (1);
-      Serial2.write(highByte(patron_rayos));
-      delay(1);
-     
-      Serial2.write(lowByte(patron_rayos));
-    
-      delay(75);
-      /*
-      //repito el envio
-      Serial2.write(bytealto); delay(1);
-      Serial2.write(bytebajo); delay(75);
-      */
-
-     
+  for (int i=0; i<4; i++)
+  {
+    Serial2.write(highByte(patron_envio));
+    delay(1);
+    Serial2.write(lowByte(patron_envio));
+    delay (1);
+  }
+  delay(75);
+       
      /*
       Serial.print("byte alto-byte bajo: ");
       Serial.print(bytealto,BIN);
@@ -123,82 +126,47 @@ void envia_datos (unsigned int patron_rayos)
 
     }
   
-  
+
+/***********************************************************************/
+/***      unsigned int lee_dato ()                **********************
+ Lee datos en el puerto Serial2 del arduino MEGA
+ Los datos corresponden a el byte bajo y el byte alto de una
+     una palabra de 16 bits. Los datos se envían y reciben dos veces 
+     para corregir errores de comunicación
+************************************************************************/
 unsigned int lee_dato ()
 {
   unsigned int respuesta = 0;
     
-  byte datos_leidos [4] = {0,0,0,0};
-   
-  if (Serial2.available())
-  {
-    longitud = Serial2.readBytes (datos_leidos, 2);
-    respuesta = datos_leidos[0] *256 + datos_leidos [1];
+  byte datos [8] = {0,0,0,0,0,0,0,0};
   
-    
-    //nuevaPisada = true;
-    
-    /************
-    if(dato[0]>0 || dato[1]>0)
-    {
-      TileStep(dato[0], dato[1]);
-    }
-    *////////////////
+  Serial.print ("datos disponibles = "); Serial.println (Serial2.available());
+   
+  if (Serial2.available() >= 4)
+  {
+    Serial2.readBytes (datos, 4);
+    respuesta = (datos[0] & datos[2]) *256 + (datos [1] & datos [3]);
 
+    // Vacía el buffer del puerto serie
     while (Serial2.available())   // Limpia el buffer del puerto serie
     {
       Serial2.read();
       Serial.print (".");
     }
-
-    Serial.print ("El dato cono!     "); Serial.println (respuesta);
-
-  }
-  
+  }  
   return respuesta;
-    
-  /*
-  }
-  while( Serial2.available())
-  {
-    dato[longitud]=Serial2.read();
-    longitud++;
-    if (longitud>4) longitud=0;
-  }
-  /* //leer los dos char y llamar a TileStep //Envio al MIDIel caracter recibido por puerto serie
-  dato[0] = 0;
-  dato[1] = 0;
-  longitud = Serial2.readBytes(dato, 2); //Leo los 2 bytes dato[0]  y dato[1] y me da el nº(longitud leida) de bytes
-
-  //Cuando tenga los 2 bytes construyo mi dato de 16 bits
-  if( longitud >= 2) 
-  {
-    longitud=0;
-
-        /*
-        Serial.print ("datos recibidos   ");
-        
-        Serial.print(dato[1], BIN);
-        Serial.print("  ");
-        Serial.println(dato[0], BIN);
-        //llamo a TileStep : pisada correcta. Si son 0 no llamo a la función
-        
-        
-        if(dato[0]>0 || dato[1]>0){
-          
-          
-             
-           TileStep(dato[0], dato[1]);
-        } 
-      
-      }
-          
-    */
- }
+}
 
 
 
-void LEDs_placa (unsigned int salida, int tiempo_LED_on)
+/***********************************************************************/
+/***   void LEDs_placa (unsigned int patron_LED, int tiempo_LED_on)  ***
+ Maneja el encendido y apagado de la matriz de LEDs de la placa de control
+ 
+ patron_LED:    el patron de LEDs a encender
+ tiempo_LED_on: tiempo hasta el apagado del LED (milisegundos)
+************************************************************************/
+void LEDs_placa (unsigned int patron_LED, int tiempo_LED_on)
 {
   // Gestiona el encendido de los LED de la placa electrónica
   static unsigned long tiempo[16];
@@ -206,7 +174,7 @@ void LEDs_placa (unsigned int salida, int tiempo_LED_on)
 
   for (int i = 0; i < 16; i++) 
   {
-    if(bitRead(salida, i)) 
+    if(bitRead(patron_LED, i)) 
     {
       //Serial.print("Tiempo en milis salida distinta a la anterior:");
       //Serial.println(tiempo1);

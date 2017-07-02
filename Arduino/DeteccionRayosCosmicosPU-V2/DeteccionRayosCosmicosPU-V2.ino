@@ -50,7 +50,7 @@ unsigned int tiempo2;
   int instrument = 32;
   
 // Duración máxima de las notas
-  unsigned long timeNoteOff = 3000;
+  unsigned long timeNoteOff = 7000;
   
 // Escala de notas
   byte notas[10] = {67-12,76-12,81-12,84-12,86-12,67+12,76+12,81+12,84+12,86+12};
@@ -81,7 +81,9 @@ void setup() {
   
   
   // initialize the serial communication:
-  Serial.begin(115200); // Monitorizar en pantalla
+  Serial.begin(115200); // Monitorizar en pantalla  
+  Serial.println ("Configurando entradas y salidas");
+  
   Serial2.begin(9600);  //En mega Serial2 en pines 16 y 17
   
   //Entradas
@@ -130,16 +132,21 @@ void setup() {
 
  
   //Test de leds placa techo
+  Serial.println ("Test de los LED en placa de techo");
   for(int i=0; i<16; i++){
      digitalWrite(i+22, HIGH);
+     envia_datos (1<<i);
+
+     
      delay(300);
      digitalWrite(i+22, LOW); 
  
   }
   
 //TEST inicial: Enciendo cada fila de la pista de baile
- 
- /* Serial2.write(0x00);
+  Serial.println ("Test de la comunicación y los LED de suelo");
+  /*
+  Serial2.write(0x00);
   delay(1);
   Serial2.write(0x0F);
   delay(1500);
@@ -157,9 +164,23 @@ void setup() {
   Serial2.write(0xF0);
   delay(1);
   Serial2.write(0x00);
+  delay(1500);
+
+ */
+  /*
+  // Alternativo
+  envia_datos (B0000000000001111);
+  delay(1500);
+
+  envia_datos (B0000000011110000);
+  delay(1500);
+
+  envia_datos (B0000111100000000);
+  delay(1500);
+
+  envia_datos (B1111000000000000);
   delay(1500);
   */
-
 
 /*
   //mando por columnas
@@ -184,8 +205,12 @@ void setup() {
   delay(1500);
 */
 
-  
+  Serial.println ("Inicia el sistema MIDI");
   MIDIsetup(); //Inicialización MIDI
+  
+  
+  Serial.println ("Comienza el ciclo de trabajo");
+
 }
 
   boolean nuevaPisada = false;
@@ -210,17 +235,16 @@ void setup() {
   byte bytebajo;  //Puse byte en lugar de char
   unsigned int tiempoON[16];
   int cuenta;
-  int num_muestreos = 10000;  // Numero de muetreos de los tubos antes de revisar el puerto serie
+  unsigned long num_muestreos = 2000;  // Numero de muetreos de los tubos antes de revisar el puerto serie
   int tiempo_LED_on = 1500;
   
-  unsigned int pisadas;
+  unsigned int patron_pisadas, patron_pisadas_ant;
 
 
 void loop() { 
-  int muestreos = 0;
+  unsigned long muestreos = 0;
   unsigned long millis_anterior = millis();
   unsigned long micros_muestreo;
-  
 
   // entradas1=0;  //Almaceno lectura de 4 tubos fila1
   // entradas2=0;  //Almaceno lectura de 4 tubos fila2
@@ -235,31 +259,13 @@ void loop() {
   while (muestreos < num_muestreos)
   { 
     muestreos ++; 
-    salida = muestreo_tubos ();
-    
-    
-    /**************/
-    //salida = 0;
-    /**************/
-    
-    
-    
-    
+    salida = muestreo_tubos ();    
     if(salida != salidaAnterior) 
     {        
       salidaAnterior = salida;
       break;
     }
   }
-
-
-
-    /**************/
-    //salida = 256;
-    /**************/
-
-
-
 
   micros_muestreo = (millis() - millis_anterior) *1000 / muestreos; 
   if (salida)
@@ -275,26 +281,44 @@ void loop() {
 
   
 // lee el puerto serie 
-  pisadas = lee_dato ();
-
-  if (pisadas) 
+  patron_pisadas = 0;
+  unsigned int auxiliar = lee_dato (); 
+  for (int i=0; i<16; i++)
   {
-    nuevaPisada = true;
-    TileStep(pisadas);
+    bitWrite(patron_pisadas, i, bitRead(auxiliar, 15-i));
   }
+  
+  
+  
+  //nuevaPisada = true;
+  
+
+  if (patron_pisadas != patron_pisadas_ant) 
+  {
+    //Serial.println(); Serial.print ( "este es elpatrón de pisadas recibido: "); Serial.print (patron_pisadas,BIN);Serial.println();
+    patron_pisadas_ant = patron_pisadas;
+    nuevaPisada = true;
+    //TileStep(patron_pisadas);
+  }
+
+  if (patron_pisadas) 
+  {
+    TileStep(patron_pisadas);
+  }
+
 
   // Gestiona el encendido de los LED de la placa
   LEDs_placa (salida, 1500);
   
-  if (nuevoRayo || nuevaPisada || (muestreos >= num_muestreos))  
+  if (nuevoRayo || nuevaPisada)  
   {
     //Serial.print (salida,BIN); Serial.print ("  -  ");
     //Serial.print (highByte(salida),BIN); Serial.print ("  -  ");
     //Serial.print (lowByte(salida),BIN); Serial.println ("  -  ");
 
     
-    Serial.print (micros_muestreo); Serial.print (" micro_seg\t   "); 
-    imprime_datos (highByte(salida), lowByte(salida), highByte(pisadas), lowByte(pisadas));
+    Serial.print (micros_muestreo); Serial.print (" micro_seg\t   "); ; Serial.print (patron_pisadas); Serial.print ("        ");
+    imprime_datos (highByte(salida), lowByte(salida), highByte(patron_pisadas), lowByte(patron_pisadas));
   }
  
 }

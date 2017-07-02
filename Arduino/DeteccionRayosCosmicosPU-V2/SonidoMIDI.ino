@@ -110,6 +110,8 @@ void TileStep(unsigned int matrix){
 
   unsigned long miliSeconds = millis();
   
+  Serial.print ("esto es matrix: "); Serial.println (matrix);
+  
   for (int i=0; i<16; i++)
   {
     // Comprueba si ya pasó el tiempo necesario para apagar la nota de la baldosa
