@@ -129,15 +129,10 @@ void setup() {
   //Alimento Bluetooth con pin 10(HIGH) y GND
   digitalWrite(10, HIGH);
 
-
- 
   //Test de leds placa techo
   Serial.println ("Test de los LED en placa de techo");
   for(int i=0; i<16; i++){
      digitalWrite(i+22, HIGH);
-     envia_datos (1<<i);
-
-     
      delay(300);
      digitalWrite(i+22, LOW); 
  
@@ -145,6 +140,7 @@ void setup() {
   
 //TEST inicial: Enciendo cada fila de la pista de baile
   Serial.println ("Test de la comunicación y los LED de suelo");
+  
   /*
   Serial2.write(0x00);
   delay(1);
@@ -164,25 +160,9 @@ void setup() {
   Serial2.write(0xF0);
   delay(1);
   Serial2.write(0x00);
-  delay(1500);
-
- */
-  /*
-  // Alternativo
-  envia_datos (B0000000000001111);
-  delay(1500);
-
-  envia_datos (B0000000011110000);
-  delay(1500);
-
-  envia_datos (B0000111100000000);
-  delay(1500);
-
-  envia_datos (B1111000000000000);
   delay(1500);
   */
-
-/*
+  
   //mando por columnas
   Serial2.write(0x11);
   delay(1);
@@ -203,7 +183,7 @@ void setup() {
   delay(1);
   Serial2.write(0x88);
   delay(1500);
-*/
+
 
   Serial.println ("Inicia el sistema MIDI");
   MIDIsetup(); //Inicialización MIDI

@@ -223,8 +223,8 @@ void loop() {
      nuevaPisada = true;
 
 
-      BTSlave.write(~switchVar1);
-      BTSlave.write(~switchVar2);
+     // BTSlave.write(~switchVar1);
+     // BTSlave.write(~switchVar2);
 
      switchVar1_anterior = switchVar1;
      switchVar2_anterior = switchVar2;    
