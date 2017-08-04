@@ -4,7 +4,9 @@
 #include <SoftwareSerial.h>
 SoftwareSerial BTSlave(11,12); //Rx=11, Tx=12 
 
-  
+// capturar versión V3
+
+
 byte dato1 = 0;  
 byte dato2 = 0;
 byte dato3 = 0;
