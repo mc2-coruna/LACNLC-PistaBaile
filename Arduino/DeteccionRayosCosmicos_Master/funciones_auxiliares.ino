@@ -64,13 +64,8 @@ unsigned int muestreo_tubos ()
     bitWrite(entradas2, 3, sttubo23);
     bitWrite(entradas2, 4, 1);  //...así empieza por 1 y visualizo los 0
     
-      //Miramos coincidencias de deteccion de rayo entre todos los tubos 
-  //y generamos una palabra de salida - 16 bits(16 salidas)
-  
-  /*if (sttubo10 ) { bitWrite(salida, 15, 1); Serial.println(salida, BIN); delay(1000); bitWrite(salida, 14, 1); 
-  Serial.print("Salida: "); Serial.println(salida, BIN);
-  }*/
-  
+    //Miramos coincidencias de deteccion de rayo entre todos los tubos 
+    //y generamos una palabra de salida - 16 bits(16 salidas)
   
   if (!sttubo10 && !sttubo20)  bitWrite(salida, 0, 1);
   if (!sttubo10 && !sttubo21)  bitWrite(salida, 1, 1);
@@ -109,22 +104,8 @@ void envia_datos (unsigned int patron_envio)
     delay (1);
   }
   delay(75);
-       
-     /*
-      Serial.print("byte alto-byte bajo: ");
-      Serial.print(bytealto,BIN);
-      Serial.print("-");
-      Serial.println(bytebajo,BIN);
-      
-      Serial.print("Salida-16 bits: ");
-      Serial.println(salida, BIN);
-      Serial.print("Tiempo en milis salida:");
-      Serial.println(tiempo1);
-      //Enciendo los leds  donde el bit de la palabra salidas esté a 1. Leo los 16 bits
-      //Leds están desde salida 38 a 53. Los enciendo o apago
-     */
 
-    }
+}
   
 
 /***********************************************************************/

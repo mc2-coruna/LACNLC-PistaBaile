@@ -73,26 +73,6 @@ void TileOn(unsigned int matrix){
     }
   }
   
-  
-  /*
-  for (int i=0; i<16; i++)
-  {
-    boolean prueba;
-    prueba = 1 & (matrix>>i);
-    Serial.print (prueba,BIN);    
-  }
-  
-  Serial.print ("\t");
-  for (int i=0; i<16; i++)
-  {
-    if (tileNote[i] == 0) Serial.print (" --");
-    else if (tileSteped[i] == false) {Serial.print (" "); Serial.print (tileNote[i]);}
-    else if (tileSteped[i] == true) {Serial.print ("*"); Serial.print (tileNote[i]);}
-    Serial.print ("   ");
-  }
-  Serial.println();
-  */
-  
 }
 
 
@@ -138,25 +118,6 @@ void TileStep(unsigned int matrix){
     }
   }
   
-  /*
-  Serial.print ("\t\t\t");
-  for (int i=0; i<16; i++)
-  {
-    if (tileNote[i] == 0) Serial.print (" --");
-    else if (tileSteped[i] == false) {Serial.print (" "); Serial.print (tileNote[i]);}
-    else if (tileSteped[i] == true) {Serial.print ("*"); Serial.print (tileNote[i]);}
-    Serial.print ("   ");
-  }
-  Serial.print ("\t");
-  
-  for (int i=0; i<16; i++)
-  {
-    boolean prueba;
-    prueba = 1 & (matrix>>i);
-    Serial.print (prueba,BIN);    
-  }
-  Serial.println ();    
-  */
   
 }
 

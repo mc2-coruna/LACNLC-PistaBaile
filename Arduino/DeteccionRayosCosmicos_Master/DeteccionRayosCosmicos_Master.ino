@@ -54,10 +54,6 @@ unsigned int tiempo2;
   
 // Escala de notas
   byte notas[10] = {67-12,76-12,81-12,84-12,86-12,67+12,76+12,81+12,84+12,86+12};
-  
-  //byte notas[5] = {67,76,81,84,86};
-  //byte notas[5] = {67,69,71,73,75};
-
 
 
 // Variables auxiliares para cada baldosa (canal)
@@ -84,7 +80,7 @@ void setup() {
   Serial.begin(115200); // Monitorizar en pantalla  
   Serial.println ("Configurando entradas y salidas");
   
-  Serial2.begin(9600);  //En mega Serial2 en pines 16 y 17
+  Serial2.begin(115200);  //En mega Serial2 en pines 16 y 17
   
   //Entradas
   pinMode(tubo10, INPUT_PULLUP);
@@ -105,8 +101,6 @@ void setup() {
   
   //Salidas
   
- // pinMode(18, OUTPUT);  //Alimentacion Bluetooth (0V - LOW)
- // pinMode(19, OUTPUT);  //Alimentacion Bluetooth (5V - HIGH) 
   pinMode(10, OUTPUT);
    
   pinMode(C1, OUTPUT); 
@@ -141,27 +135,6 @@ void setup() {
 //TEST inicial: Enciendo cada fila de la pista de baile
   Serial.println ("Test de la comunicación y los LED de suelo");
   
-  /*
-  Serial2.write(0x00);
-  delay(1);
-  Serial2.write(0x0F);
-  delay(1500);
-  
-  Serial2.write(0x00);
-  delay(1);
-  Serial2.write(0xF0);
-  delay(1500);
-  
-  Serial2.write(0x0F);
-  delay(1);
-  Serial2.write(0x00);
-  delay(1500);
-  
-  Serial2.write(0xF0);
-  delay(1);
-  Serial2.write(0x00);
-  delay(1500);
-  */
   
   //mando por columnas
   Serial2.write(0x11);
@@ -195,8 +168,6 @@ void setup() {
 
   boolean nuevaPisada = false;
   boolean nuevoRayo = false;
-  
-  // byte aux0, aux1;
        
   
   int sttubo10;
@@ -226,8 +197,6 @@ void loop() {
   unsigned long millis_anterior = millis();
   unsigned long micros_muestreo;
 
-  // entradas1=0;  //Almaceno lectura de 4 tubos fila1
-  // entradas2=0;  //Almaceno lectura de 4 tubos fila2
   
   salidaAnterior = salida;
   salida = 0; 
@@ -270,15 +239,13 @@ void loop() {
   
   
   
-  //nuevaPisada = true;
+
   
 
   if (patron_pisadas != patron_pisadas_ant) 
   {
-    //Serial.println(); Serial.print ( "este es elpatrón de pisadas recibido: "); Serial.print (patron_pisadas,BIN);Serial.println();
     patron_pisadas_ant = patron_pisadas;
     nuevaPisada = true;
-    //TileStep(patron_pisadas);
   }
 
   if (patron_pisadas) 
@@ -292,11 +259,6 @@ void loop() {
   
   if (nuevoRayo || nuevaPisada)  
   {
-    //Serial.print (salida,BIN); Serial.print ("  -  ");
-    //Serial.print (highByte(salida),BIN); Serial.print ("  -  ");
-    //Serial.print (lowByte(salida),BIN); Serial.println ("  -  ");
-
-    
     Serial.print (micros_muestreo); Serial.print (" micro_seg\t   "); ; Serial.print (patron_pisadas); Serial.print ("        ");
     imprime_datos (highByte(salida), lowByte(salida), highByte(patron_pisadas), lowByte(patron_pisadas));
   }

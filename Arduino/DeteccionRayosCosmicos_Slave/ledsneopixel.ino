@@ -33,17 +33,6 @@ void PruebaPista(){
 
 void iluminapista( ){
 
-/*  int numLEDSbaldosa_1[4] = {32, 36, 32, 36};  //rombo, circulo, cuadrado,  triangulo
-  int numLEDSbaldosa_2[4] = {36, 32, 32, 36};  //T, C, R , circulo
-  int numLEDSbaldosa_3[4] = {36, 32, 36, 32};  //Cir, C, T, R
-  int numLEDSbaldosa_4[4] = {32, 36, 36, 32};  //C, T, Cir, R
-  
-  int factor_1[4] = {0, 36, 68, 104};  //1 y 3 empiezan al revés
-  int factor_2[4] = {0, 36, 68, 100};
-  int factor_3[4] = {0, 32, 68, 100}; //
-  int factor_4[4] = {0, 32, 68, 104}; 
-*/
-
   int numLEDSbaldosa_1[4] = {32, 36, 36, 32};  //C, T, circulo, Rombo
   int numLEDSbaldosa_2[4] = {36, 32, 36, 32};  //T, C, R , circulo
   int numLEDSbaldosa_3[4] = {36, 32, 32, 36};  //Cir, C, T, R
@@ -61,16 +50,6 @@ void iluminapista( ){
   byte green1[4], green2[4], green3[4], green4[4];
   byte blue1[4], blue2[4], blue3[4], blue4[4];
 
-  
-  
-/*  Serial.print("Fila1: ");
-   Serial.println(fila1, BIN);
-   Serial.print("Fila2: ");
-   Serial.print(fila2, BIN);
-   Serial.println("Fila3: ");
-   Serial.println(fila3, BIN);
-   Serial.print("Fila4: ");
-   Serial.print(fila4, BIN); */
 
 // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
 // Con cada lectura cambio el color
