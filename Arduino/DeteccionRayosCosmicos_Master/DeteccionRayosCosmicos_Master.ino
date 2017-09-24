@@ -186,7 +186,7 @@ void setup() {
   byte bytebajo;  //Puse byte en lugar de char
   unsigned int tiempoON[16];
   int cuenta;
-  unsigned long num_muestreos = 2000;  // Numero de muetreos de los tubos antes de revisar el puerto serie
+  unsigned long num_muestreos = 50;  // Numero de muetreos de los tubos antes de revisar el puerto serie
   int tiempo_LED_on = 1500;
   
   unsigned int patron_pisadas, patron_pisadas_ant;
@@ -204,16 +204,22 @@ void loop() {
   nuevoRayo = false;
   nuevaPisada = false;
 
+  int descartes = 1;          //*********************************
+
   // Muestrea los tubos GEIGER
   while (muestreos < num_muestreos)
   { 
     muestreos ++; 
-    salida = muestreo_tubos ();    
-    if(salida != salidaAnterior) 
-    {        
-      salidaAnterior = salida;
-      break;
+    salida = muestreo_tubos ();             ///*********************************
+    if (muestreos % descartes == 0)
+    {
+      if(salida != salidaAnterior) 
+      {        
+        salidaAnterior = salida;
+        break;
+      }
     }
+    delay (2);
   }
 
   micros_muestreo = (millis() - millis_anterior) *1000 / muestreos; 
@@ -226,6 +232,7 @@ void loop() {
         //Envio palabra, dos caracteres,  al otro arduino a través de BT 
     envia_datos (salida);
     TileOn(salida);  //Activa la nota musical
+    delay (500);
   }
 
   

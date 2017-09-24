@@ -43,10 +43,20 @@ void MIDIsetup() {
   for(byte i=0; i<16 ; i++) 
   {
     tileNote[i] = 0;                 // Set the tile note to 0
-  }  
+  }
+  
+  setMidiVol (105);
 }
 
-
+void setMidiVol (int volLevel)
+{
+  if ((volLevel > 0) & (volLevel<128))
+  {
+    byte level = volLevel;
+    talkMIDI(0xB0, 0x07, level/3);          // Set channel 1 volume to low value (50)
+    talkMIDI(0xB1, 0x07, level);         // Set channel 2 volume to near max (127)
+  }
+}
 
 void TileOn(unsigned int matrix){
   
@@ -69,7 +79,7 @@ void TileOn(unsigned int matrix){
       tileNote [i] = notas [random (sizeof (notas))];
       tileSteped [i] = false;
       noteOn(0, tileNote [i], 120);          // Activa la nota en el canal 1
-      delay (50); //PONIA 200
+      delay (200); //PONIA 200
     }
   }
   
