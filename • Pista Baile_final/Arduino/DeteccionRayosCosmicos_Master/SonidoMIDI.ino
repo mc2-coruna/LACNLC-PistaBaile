@@ -53,7 +53,7 @@ void setMidiVol (int volLevel)
   if ((volLevel > 0) & (volLevel<128))
   {
     byte level = volLevel;
-    talkMIDI(0xB0, 0x07, level/3);          // Set channel 1 volume to low value (50)
+    talkMIDI(0xB0, 0x07, level/4);          // Set channel 1 volume to low value (50)
     talkMIDI(0xB1, 0x07, level);         // Set channel 2 volume to near max (127)
   }
 }
